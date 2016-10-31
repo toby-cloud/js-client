@@ -1,2 +1,3 @@
-# toby-js-client
-Toby javascript client for browser use.
+# Toby Websockets
+
+> Connect to toby with any browser or application.
