@@ -15,6 +15,7 @@ function Toby(botId, secret, on_connect, on_disconnect, on_message) {
   var secret = secret;
   var on_disconnect = on_disconnect;
   var on_connect = on_connect;
+  var on_message = on_message;
   var client = false;
 
   var mqttStart = function() {
@@ -37,8 +38,7 @@ function Toby(botId, secret, on_connect, on_disconnect, on_message) {
 
     // called when the client connects
     function onConnect() {
-      // Once a connection has been made, make a subscription and send a message.
-      client.subscribe("client/" + botId + "/#");
+      client.subscribe("client/" + botId);
       on_connect();
     }
 
@@ -57,7 +57,8 @@ function Toby(botId, secret, on_connect, on_disconnect, on_message) {
     // called when a message arrives
     function onMessageArrived(message) {
       var from = message.destinationName.split("/").splice(2).join("/");
-      on_message(from, JSON.parse(message.payloadString));
+      obj = JSON.parse(message.payloadString);
+      on_message(obj);
     }
   };
 
@@ -66,48 +67,117 @@ function Toby(botId, secret, on_connect, on_disconnect, on_message) {
     mqttStart();
   }
 
-  this.send = function (m) {
-    var message = new Paho.MQTT.Message(m);
+  this.send = function (payload, tags, ack) {
+    var message = new Paho.MQTT.Message(JSON.stringify({payload: payload, tags: tags, ack: ack}));
     message.destinationName = "server/" + botId + "/send";
     client.send(message);
   }
 
-  this.follow = function(hashtag_string, ackTag) {
-    var payload = {
-      tags: findHashtags(hashtag_string),
-      ackTag: ackTag
-    }
-    var message = new Paho.MQTT.Message(JSON.stringify(payload));
+  this.follow = function(tags, ack) {
+    var message = new Paho.MQTT.Message(JSON.stringify({tags: tags, ack: ack}));
     message.destinationName = "server/" + botId + "/follow";
     client.send(message);
-    console.log("followed", hashtag_string);
   }
 
-  this.info = function(ackTag) {
-    var message = new Paho.MQTT.Message(JSON.stringify({ackTag:ackTag}));
+  this.info = function(ack) {
+    var message = new Paho.MQTT.Message(JSON.stringify({ack:ack}));
     message.destinationName = "server/" + botId + "/info";
     client.send(message);
   }
 
-  this.getBots = function(ackTag) {
-    var message = new Paho.MQTT.Message(JSON.stringify({ackTag:ackTag}));
+  this.getBots = function(ack) {
+    var message = new Paho.MQTT.Message(JSON.stringify({ack:ack}));
     message.destinationName = "server/" + botId + "/bots";
     client.send(message);
   }
 
-  this.createBot = function(name, password, ackTag) {
-    var message = new Paho.MQTT.Message(JSON.stringify({id: name, secret: password, ackTag: ackTag}));
+  this.createBot = function(name, password, ack) {
+    var message = new Paho.MQTT.Message(JSON.stringify({id: name, sk: password, ack: ack}));
     message.destinationName = "server/" + botId + "/create-bot";
     client.send(message);
   }
 
-  this.removeBot = function(targetId, ackTag) {
-    var message = new Paho.MQTT.Message(JSON.stringify({botId: targetId, ackTag: ackTag}));
+  this.removeBot = function(targetId, ack) {
+    var message = new Paho.MQTT.Message(JSON.stringify({id: targetId, ack: ack}));
     message.destinationName = "server/" + botId + "/remove-bot";
     client.send(message);
   }
 
 }
+
+/** ------------------------- Helper Methods ------------------------------- **/
+
+/**
+* isArray - check if valid array
+*
+* @param  {Array} a the value to test
+* @return {boolean}  returns true if parameter is an array, false otherwise
+*/
+function isArray(a) {
+  return Array.isArray(a)
+}
+
+/**
+ * isString - check if valid string
+ *
+ * @param  {String} s the value to test
+ * @return {boolean}  returns true if parameter is string, false otherwise
+ */
+function isString(s) {
+  return (typeof s === 'string' || s instanceof String);
+}
+
+/**
+* isString - check if valid string
+*
+* @param  {boolean} b the value to test
+* @return {boolean}  returns true if parameter is boolean, false otherwise
+*/
+function isBoolean(b) {
+  return typeof(b) === "boolean";
+}
+
+/**
+ * isString - check if valid string
+ *
+ * @param  {String} s the value to test
+ * @return {boolean}  returns true if parameter is string, false otherwise
+ */
+function isString(s) {
+  return (typeof s === 'string' || s instanceof String);
+}
+
+
+/**
+ * isJsonObject - description
+ *
+ * @param  {type} obj description
+ * @return {type}     description
+ */
+function isJsonObject(obj) {
+  return isJsonString(JSON.stringify(obj));
+}
+
+
+/**
+ * isJsonString - check if string is valid json
+ *
+ * @param  {String} jsonString the string to check
+ * @return {boolean}           true if valid json, false otherwise
+ */
+function isJsonString(jsonString) {
+    try {
+        var o = JSON.parse(jsonString);
+        if (o && typeof o === "object") {
+            return true;
+        }
+    }
+    catch (e) { }
+
+    return false;
+};
+
+
 
 /**
  * removeHashtags - remove hashtags from a string

@@ -1,0 +1,60 @@
+
+<!DOCTYPE html>
+<html style="height:100%;">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+
+    <title>Color Bot</title>
+
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+		<script src="../src/mqttws31.js"></script>
+    <script src="../src/toby.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.0.1/vue.js"></script>
+		<link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.6.0/pure-min.css">
+    <link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.6.0/grids-responsive-min.css">
+</head>
+<body style="height:100%;">
+
+  <div id="app" style="height:100%;">
+    <div v-bind:style="{ backgroundColor: color}" style="height:100%;padding:20px;">
+      <br>
+      <div class="container">
+        <h1>Color Bot</h1>
+        <p>
+          Send a message tagged with #color to change.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+
+    var bot = new Toby("colorbot", "colorbot", function() {
+      //bot.info("adsf");
+    }, function() {
+      console.log("disconnected");
+    }, function(message) {
+      console.log(message);
+      app.setColor(message.payload.message);
+    });
+    bot.start();
+
+    var app = new Vue({
+      el: "#app",
+      data: {
+        color: "white",
+        online: false
+      },
+      methods: {
+        setColor: function(color) {
+          app.color = color;
+        }
+      }
+    });
+  </script>
+
+
+</body>
+</html>
