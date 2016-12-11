@@ -62,7 +62,6 @@ function Toby(botId, secret, on_connect, on_disconnect, on_message) {
     }
   };
 
-
   /**
    * start - start the bot
    */
@@ -91,47 +90,92 @@ function Toby(botId, secret, on_connect, on_disconnect, on_message) {
     client.send(request);
   }
 
+  /**
+   * follow - add bot subscriptions
+   *
+   * @param  {type} tags description
+   * @param  {type} ack  description
+   */
   this.follow = function(tags, ack) {
     var request = new Paho.MQTT.Message(JSON.stringify({tags: tags, ack: ack}));
     request.destinationName = "server/" + botId + "/follow";
     client.send(request);
   }
 
+  /**
+   * unfollow - remove bot subscriptions
+   *
+   * @param  {type} tags description
+   * @param  {type} ack  description
+   */
   this.unfollow = function(tags, ack) {
     var request = new Paho.MQTT.Message(JSON.stringify({tags: tags, ack: ack}));
     request.destinationName = "server/" + botId + "/unfollow";
     client.send(request);
   }
 
+  /**
+   * info - get bot information
+   *
+   * @param  {type} ack description
+   */
   this.info = function(ack) {
     var request = new Paho.MQTT.Message(JSON.stringify({ack:ack}));
     request.destinationName = "server/" + botId + "/info";
     client.send(request);
   }
 
+  /**
+   * createBot - create a standard bot (users only)
+   *
+   * @param  {type} name     description
+   * @param  {type} password description
+   * @param  {type} ack      description
+   */
   this.createBot = function(name, password, ack) {
     var request = new Paho.MQTT.Message(JSON.stringify({id: name, sk: password, ack: ack}));
     request.destinationName = "server/" + botId + "/create-bot";
     client.send(request);
   }
 
+  /**
+   * createSocket - create a socket bot (standard bots only)
+   *
+   * @param  {type} persist description
+   * @param  {type} ack     description
+   */
   this.createSocket = function(persist, ack) {
     var request = new Paho.MQTT.Message(JSON.stringify({persist: persist, ack: ack}));
     request.destinationName = "server/" + botId + "/create-socket";
     client.send(request);
   }
 
+  /**
+   * removeBot - remove a bot (users only)
+   *
+   * @param  {type} targetId description
+   * @param  {type} ack      description
+   */
   this.removeBot = function(targetId, ack) {
     var request = new Paho.MQTT.Message(JSON.stringify({id: targetId, ack: ack}));
     request.destinationName = "server/" + botId + "/remove-bot";
     client.send(request);
   }
 
+
+  /**
+   * removeSocket - remove a socket (standard bots only)
+   *
+   * @param  {type} targetId description
+   * @param  {type} ack      description
+   */
   this.removeSocket = function(targetId, ack) {
     var request = new Paho.MQTT.Message(JSON.stringify({id: targetId, ack: ack}));
     request.destinationName = "server/" + botId + "/remove-socket";
     client.send(request);
   }
+
+  // TODO hooks on and off
 
 }
 
