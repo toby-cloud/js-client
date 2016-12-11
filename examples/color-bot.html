@@ -31,8 +31,9 @@
 
   <script type="text/javascript">
 
-    var bot = new Toby("colorbot", "colorbot", function() {
+    var bot = new Bot("colorbot", "colorbot", function() {
       //bot.info("adsf");
+      bot.follow(["color"], "followed");
     }, function() {
       console.log("disconnected");
     }, function(message) {

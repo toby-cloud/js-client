@@ -1,16 +1,14 @@
 
-
 /**
- * Toby - description
+ * Bot constructor
  *
- * @param  {String} botId         description
- * @param  {String} secret        description
+ * @param  {String}   botId         description
+ * @param  {String}   secret        description
  * @param  {Function} on_connect    description
  * @param  {Function} on_disconnect description
  * @param  {Function} on_message    description
- * @return {type}               description
  */
-function Toby(botId, secret, on_connect, on_disconnect, on_message) {
+function Bot(botId, secret, on_connect, on_disconnect, on_message) {
   var botId = botId;
   var secret = secret;
   var on_disconnect = on_disconnect;
@@ -42,7 +40,7 @@ function Toby(botId, secret, on_connect, on_disconnect, on_message) {
       on_connect();
     }
 
-    function doFail(e){
+    function doFail(e) {
       alert("Unable to connect to Toby");
     }
 
@@ -93,8 +91,8 @@ function Toby(botId, secret, on_connect, on_disconnect, on_message) {
   /**
    * follow - add bot subscriptions
    *
-   * @param  {type} tags description
-   * @param  {type} ack  description
+   * @param  {Array} tags the tags to follow
+   * @param  {String} ack  the ack tag
    */
   this.follow = function(tags, ack) {
     var request = new Paho.MQTT.Message(JSON.stringify({tags: tags, ack: ack}));
@@ -105,8 +103,8 @@ function Toby(botId, secret, on_connect, on_disconnect, on_message) {
   /**
    * unfollow - remove bot subscriptions
    *
-   * @param  {type} tags description
-   * @param  {type} ack  description
+   * @param  {Array} tags the tags to unfollow
+   * @param  {String} ack  the ack tag
    */
   this.unfollow = function(tags, ack) {
     var request = new Paho.MQTT.Message(JSON.stringify({tags: tags, ack: ack}));
@@ -117,7 +115,7 @@ function Toby(botId, secret, on_connect, on_disconnect, on_message) {
   /**
    * info - get bot information
    *
-   * @param  {type} ack description
+   * @param  {String} ack  the ack tag
    */
   this.info = function(ack) {
     var request = new Paho.MQTT.Message(JSON.stringify({ack:ack}));
@@ -128,9 +126,9 @@ function Toby(botId, secret, on_connect, on_disconnect, on_message) {
   /**
    * createBot - create a standard bot (users only)
    *
-   * @param  {type} name     description
-   * @param  {type} password description
-   * @param  {type} ack      description
+   * @param  {String} name     the bot's ID
+   * @param  {String} password the bot's SK
+   * @param  {String} ack      the ack tag
    */
   this.createBot = function(name, password, ack) {
     var request = new Paho.MQTT.Message(JSON.stringify({id: name, sk: password, ack: ack}));
@@ -141,8 +139,8 @@ function Toby(botId, secret, on_connect, on_disconnect, on_message) {
   /**
    * createSocket - create a socket bot (standard bots only)
    *
-   * @param  {type} persist description
-   * @param  {type} ack     description
+   * @param  {boolean} persist description
+   * @param  {String} ack  the ack tag
    */
   this.createSocket = function(persist, ack) {
     var request = new Paho.MQTT.Message(JSON.stringify({persist: persist, ack: ack}));
@@ -153,8 +151,8 @@ function Toby(botId, secret, on_connect, on_disconnect, on_message) {
   /**
    * removeBot - remove a bot (users only)
    *
-   * @param  {type} targetId description
-   * @param  {type} ack      description
+   * @param  {String} targetId the ID of the bot to delete
+   * @param  {String} ack  the ack tag
    */
   this.removeBot = function(targetId, ack) {
     var request = new Paho.MQTT.Message(JSON.stringify({id: targetId, ack: ack}));
@@ -162,12 +160,11 @@ function Toby(botId, secret, on_connect, on_disconnect, on_message) {
     client.send(request);
   }
 
-
   /**
    * removeSocket - remove a socket (standard bots only)
    *
-   * @param  {type} targetId description
-   * @param  {type} ack      description
+   * @param  {String} targetId the ID of the socket to delete
+   * @param  {String} ack  the ack tag
    */
   this.removeSocket = function(targetId, ack) {
     var request = new Paho.MQTT.Message(JSON.stringify({id: targetId, ack: ack}));
@@ -175,7 +172,28 @@ function Toby(botId, secret, on_connect, on_disconnect, on_message) {
     client.send(request);
   }
 
-  // TODO hooks on and off
+  /**
+   * enableHooks - turn on bot web hooks
+   *
+   * @param  {String} hookSk the hook secret
+   * @param  {String} ack  the ack tag
+   */
+  this.enableHooks = function(hookSk, ack) {
+    var request = new Paho.MQTT.Message(JSON.stringify({sk: hookSk, ack: ack}));
+    request.destinationName = "server/" + botId + "/hooks-on";
+    client.send(request);
+  }
+
+  /**
+   * disableHooks - turn off bot web hooks
+   *
+   * @param  {String} ack  the ack tag
+   */
+  this.disableHooks = function(ack) {
+    var request = new Paho.MQTT.Message(JSON.stringify({ack: ack}));
+    request.destinationName = "server/" + botId + "/hooks-off";
+    client.send(request);
+  }
 
 }
 
@@ -221,7 +239,6 @@ function isString(s) {
   return (typeof s === 'string' || s instanceof String);
 }
 
-
 /**
  * isJsonObject - description
  *
@@ -231,7 +248,6 @@ function isString(s) {
 function isJsonObject(obj) {
   return isJsonString(JSON.stringify(obj));
 }
-
 
 /**
  * isJsonString - check if string is valid json
@@ -250,8 +266,6 @@ function isJsonString(jsonString) {
 
     return false;
 };
-
-
 
 /**
  * removeHashtags - remove hashtags from a string
