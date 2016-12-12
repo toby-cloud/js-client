@@ -1,16 +1,14 @@
 
-
 /**
- * Toby - description
+ * Bot constructor
  *
- * @param  {String} botId         description
- * @param  {String} secret        description
+ * @param  {String}   botId         description
+ * @param  {String}   secret        description
  * @param  {Function} on_connect    description
  * @param  {Function} on_disconnect description
  * @param  {Function} on_message    description
- * @return {type}               description
  */
-function Toby(botId, secret, on_connect, on_disconnect, on_message) {
+function Bot(botId, secret, on_connect, on_disconnect, on_message) {
   var botId = botId;
   var secret = secret;
   var on_disconnect = on_disconnect;
@@ -42,7 +40,7 @@ function Toby(botId, secret, on_connect, on_disconnect, on_message) {
       on_connect();
     }
 
-    function doFail(e){
+    function doFail(e) {
       alert("Unable to connect to Toby");
     }
 
@@ -62,45 +60,139 @@ function Toby(botId, secret, on_connect, on_disconnect, on_message) {
     }
   };
 
+  /**
+   * start - start the bot
+   */
   this.start = function () {
     console.log("starting mqtt")
     mqttStart();
   }
 
+  /**
+   * stop - disconnect from Toby
+   */
+  this.stop = function() {
+    client.disconnect();
+  }
+
+  /**
+   * send - send a message
+   *
+   * @param  {Object} payload the message payload
+   * @param  {Array} tags    list of tags
+   * @param  {String} ack    the ack tag
+   */
   this.send = function (payload, tags, ack) {
-    var message = new Paho.MQTT.Message(JSON.stringify({payload: payload, tags: tags, ack: ack}));
-    message.destinationName = "server/" + botId + "/send";
-    client.send(message);
+    var request = new Paho.MQTT.Message(JSON.stringify({payload: payload, tags: tags, ack: ack}));
+    request.destinationName = "server/" + botId + "/send";
+    client.send(request);
   }
 
+  /**
+   * follow - add bot subscriptions
+   *
+   * @param  {Array} tags the tags to follow
+   * @param  {String} ack  the ack tag
+   */
   this.follow = function(tags, ack) {
-    var message = new Paho.MQTT.Message(JSON.stringify({tags: tags, ack: ack}));
-    message.destinationName = "server/" + botId + "/follow";
-    client.send(message);
+    var request = new Paho.MQTT.Message(JSON.stringify({tags: tags, ack: ack}));
+    request.destinationName = "server/" + botId + "/follow";
+    client.send(request);
   }
 
+  /**
+   * unfollow - remove bot subscriptions
+   *
+   * @param  {Array} tags the tags to unfollow
+   * @param  {String} ack  the ack tag
+   */
+  this.unfollow = function(tags, ack) {
+    var request = new Paho.MQTT.Message(JSON.stringify({tags: tags, ack: ack}));
+    request.destinationName = "server/" + botId + "/unfollow";
+    client.send(request);
+  }
+
+  /**
+   * info - get bot information
+   *
+   * @param  {String} ack  the ack tag
+   */
   this.info = function(ack) {
-    var message = new Paho.MQTT.Message(JSON.stringify({ack:ack}));
-    message.destinationName = "server/" + botId + "/info";
-    client.send(message);
+    var request = new Paho.MQTT.Message(JSON.stringify({ack:ack}));
+    request.destinationName = "server/" + botId + "/info";
+    client.send(request);
   }
 
-  this.getBots = function(ack) {
-    var message = new Paho.MQTT.Message(JSON.stringify({ack:ack}));
-    message.destinationName = "server/" + botId + "/bots";
-    client.send(message);
-  }
-
+  /**
+   * createBot - create a standard bot (users only)
+   *
+   * @param  {String} name     the bot's ID
+   * @param  {String} password the bot's SK
+   * @param  {String} ack      the ack tag
+   */
   this.createBot = function(name, password, ack) {
-    var message = new Paho.MQTT.Message(JSON.stringify({id: name, sk: password, ack: ack}));
-    message.destinationName = "server/" + botId + "/create-bot";
-    client.send(message);
+    var request = new Paho.MQTT.Message(JSON.stringify({id: name, sk: password, ack: ack}));
+    request.destinationName = "server/" + botId + "/create-bot";
+    client.send(request);
   }
 
+  /**
+   * createSocket - create a socket bot (standard bots only)
+   *
+   * @param  {boolean} persist description
+   * @param  {String} ack  the ack tag
+   */
+  this.createSocket = function(persist, ack) {
+    var request = new Paho.MQTT.Message(JSON.stringify({persist: persist, ack: ack}));
+    request.destinationName = "server/" + botId + "/create-socket";
+    client.send(request);
+  }
+
+  /**
+   * removeBot - remove a bot (users only)
+   *
+   * @param  {String} targetId the ID of the bot to delete
+   * @param  {String} ack  the ack tag
+   */
   this.removeBot = function(targetId, ack) {
-    var message = new Paho.MQTT.Message(JSON.stringify({id: targetId, ack: ack}));
-    message.destinationName = "server/" + botId + "/remove-bot";
-    client.send(message);
+    var request = new Paho.MQTT.Message(JSON.stringify({id: targetId, ack: ack}));
+    request.destinationName = "server/" + botId + "/remove-bot";
+    client.send(request);
+  }
+
+  /**
+   * removeSocket - remove a socket (standard bots only)
+   *
+   * @param  {String} targetId the ID of the socket to delete
+   * @param  {String} ack  the ack tag
+   */
+  this.removeSocket = function(targetId, ack) {
+    var request = new Paho.MQTT.Message(JSON.stringify({id: targetId, ack: ack}));
+    request.destinationName = "server/" + botId + "/remove-socket";
+    client.send(request);
+  }
+
+  /**
+   * enableHooks - turn on bot web hooks
+   *
+   * @param  {String} hookSk the hook secret
+   * @param  {String} ack  the ack tag
+   */
+  this.enableHooks = function(hookSk, ack) {
+    var request = new Paho.MQTT.Message(JSON.stringify({sk: hookSk, ack: ack}));
+    request.destinationName = "server/" + botId + "/hooks-on";
+    client.send(request);
+  }
+
+  /**
+   * disableHooks - turn off bot web hooks
+   *
+   * @param  {String} ack  the ack tag
+   */
+  this.disableHooks = function(ack) {
+    var request = new Paho.MQTT.Message(JSON.stringify({ack: ack}));
+    request.destinationName = "server/" + botId + "/hooks-off";
+    client.send(request);
   }
 
 }
@@ -147,7 +239,6 @@ function isString(s) {
   return (typeof s === 'string' || s instanceof String);
 }
 
-
 /**
  * isJsonObject - description
  *
@@ -157,7 +248,6 @@ function isString(s) {
 function isJsonObject(obj) {
   return isJsonString(JSON.stringify(obj));
 }
-
 
 /**
  * isJsonString - check if string is valid json
@@ -176,8 +266,6 @@ function isJsonString(jsonString) {
 
     return false;
 };
-
-
 
 /**
  * removeHashtags - remove hashtags from a string
