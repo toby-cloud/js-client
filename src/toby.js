@@ -197,6 +197,7 @@ function Bot(botId, secret, on_connect, on_disconnect, on_message) {
 
 }
 
+
 /** ------------------------- Helper Methods ------------------------------- **/
 
 /**

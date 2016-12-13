@@ -1,0 +1,21 @@
+{
+  "name": "toby-websockets",
+  "version": "1.0.0",
+  "description": "Toby javascript client for browser use.",
+  "main": "index.js",
+  "directories": {
+    "example": "examples",
+  },
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/toby-cloud/toby-websockets.git"
+  },
+  "author": "Gabriel Garcia",
+  "license": "",
+  "bugs": {
+    "url": "https://github.com/toby-cloud/toby-websockets/issues"
+  },
+  "homepage": "https://github.com/toby-cloud/toby-websockets#readme",
+  "devDependencies": {}
+}

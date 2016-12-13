@@ -19,7 +19,7 @@
 // Everything must go through this module. Global Paho.MQTT module
 // only has a single public function, client, which returns
 // a Paho.MQTT client object given connection details.
- 
+
 /**
  * Send and receive messages using web browsers.
  * <p>

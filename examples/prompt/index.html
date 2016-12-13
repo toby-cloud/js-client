@@ -1,0 +1,215 @@
+
+<!DOCTYPE html>
+<html style="height:100%;">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+
+    <title>Toby Prompt</title>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.0.1/vue.js"></script>
+    <link rel="stylesheet" href="prompt.css">
+    <link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.6.0/pure-min.css">
+    <link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.6.0/grids-responsive-min.css">
+    <script src="../../src/mqttws31.js"></script>
+    <script src="../../src/toby.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Roboto+Mono" rel="stylesheet">
+</head>
+
+<body onclick="document.getElementById('prompt').focus();">
+
+  <div id="app" style="padding:10px;">
+    <div v-if="online">
+      <div v-for="(line, id) in lines">
+        <span v-if="hidden.indexOf(line.from) < 0" style="line-height:20px;"><span v-if="line.from" style="color:springgreen;">@{{line.from}}: </span>{{line.text}}</span>
+      </div>
+      <form v-on:submit="enterCommand">
+        <span style="line-height:20px;">{{prompt}} <input type="text" v-model="command" id="prompt" autofocus autocomplete="off"></span><br>
+      </form>
+    </div>
+    <div v-else>
+      <div v-if="id == ''">
+        <form v-on:submit="enterUsername">
+          <span style="line-height:20px;">{{prompt}} <input type="text" v-model="command" id="prompt" autofocus autocomplete="off"></span><br>
+        </form>
+      </div>
+      <div v-else>
+        <form v-on:submit="enterPassword">
+          <span style="line-height:20px;">{{prompt}} <input type="text" v-model="command" id="prompt" autofocus autocomplete="off"></span><br>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+
+    var bot;
+
+    var onConnect = function() {
+      console.log("Connected to Toby!");
+      app.online = true;
+      bot.info("initial_info");
+
+
+    }
+
+    var onDisconnect = function() {
+      app.offline = true;
+      app.id = "";
+      app.prompt = "username: ";
+      app.lines = [];
+
+    }
+
+    var onMessage = function(message) {
+      console.log("received message " + JSON.stringify(message));
+      if (message.tags[0] == "initial_info") {
+        app.type = message.payload.type;
+        app.lines.push({text: "Connected as " + app.type + " bot!"});
+        app.prompt = ">>> ";
+        app.focus();
+      } else if (message.tags[0] == "info") {
+        app.displayInfo(message.payload);
+      } else {
+        if ('message' in message.payload) {
+          app.println(message.payload['message'], message.from);
+        } else {
+          app.println(JSON.stringify(message), message.from);
+        }
+      }
+    }
+
+    var app = new Vue({
+      el: "#app",
+      data: {
+        id: "",
+        type: "",
+        command: "",
+        prompt: "username: ",
+        online: false,
+        lines: [],
+        hidden: []
+      },
+
+      methods: {
+        println: function(text, from) {
+          if (from)
+            app.lines.push({text: text, from: from});
+          else
+            app.lines.push({text: text});
+        },
+        focus: function(e) {
+          document.getElementById('prompt').focus();
+        },
+        enterUsername: function(e) {
+          e.preventDefault();
+          app.id = app.command;
+          app.command = "";
+          app.prompt = "password: ";
+        },
+        enterPassword: function(e) {
+          e.preventDefault();
+          var sk = app.command;
+          app.command = "";
+          app.prompt = "";
+          bot = new Bot(app.id, sk, onConnect, onDisconnect, onMessage);
+          bot.start();
+        },
+        enterCommand: function(e) {
+          e.preventDefault();
+
+          var command = app.command;
+
+          app.println(app.prompt + app.command);
+          app.command = ""; // clear
+
+          var command_split = command.split(" ");
+
+          switch(command_split[0]) {
+            // send message
+            case "s":
+            case "send":
+              var message = removeHashtags(command_split.slice(1).join(" "));
+              var tags = findHashtags(command_split.slice(1).join(" "));
+              bot.send({message: message}, tags, '');
+              break;
+
+            // get bot information
+            case "i":
+            case "info":
+              bot.info('info');
+              break;
+
+            // follow tags (standard only)
+            case "f":
+            case "follow":
+              if (command_split.length > 1) {
+                bot.follow(findHashtags(command_split.splice(1).join(" ")), "followed");
+                app.command = "";
+              } else {
+                app.println("usage: f #tag1 #tag2 ...");
+              }
+              break;
+
+            // unfollow tags (standard only)
+            case "u":
+            case "unfollow":
+              break;
+
+            // hide bots
+            case "hide":
+              if (command_split.length > 1) {
+                command_split.splice(1).forEach(function(id) {
+                  app.hidden.push(id);
+                });
+              } else {
+                app.println("usage: h <botId> ...");
+              }
+              break;
+
+            // unhide all bots
+            case "unhide":
+              app.hidden = []; break;
+
+            // clear terminal
+            case "cl":
+            case "clear":
+              app.lines = []; break;
+
+            case "q":
+            case "quit":
+              location.reload();
+            // empty
+            case "":
+              break;
+
+            // command not found
+            default:
+              app.println('-toby: ' + command_split[0] + ": command not found");
+          }
+        },
+
+        // TODO
+        displayInfo(info) {
+          if (app.type == "user") {
+            app.println("User bot info: ");
+          } else if (app.type == "standard") {
+            app.println("Standard bot info: ");
+          } else if (app.type == "socket") {
+            app.println("Socket bot info: ");
+          }
+        },
+
+      }
+    });
+
+    focus = function() {
+      document.getElementById('prompt').focus();
+    }
+  </script>
+
+
+</body>
+</html>
