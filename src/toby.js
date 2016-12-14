@@ -42,6 +42,7 @@ function Bot(botId, secret, on_connect, on_disconnect, on_message) {
 
     function doFail(e) {
       alert("Unable to connect to Toby");
+      on_disconnect();
     }
 
     // called when the client loses its connection
@@ -64,7 +65,6 @@ function Bot(botId, secret, on_connect, on_disconnect, on_message) {
    * start - start the bot
    */
   this.start = function () {
-    console.log("starting mqtt")
     mqttStart();
   }
 
