@@ -5,8 +5,11 @@ body {
     font-family: 'Roboto Mono';
     font-size: 12px;
     height: 100vh;
-    overflow:hidden;
 
+}
+
+::-webkit-scrollbar {
+    display: none;
 }
 
 input {

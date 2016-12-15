@@ -8,7 +8,7 @@
 
     <title>Toby Prompt</title>
 
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.0.1/vue.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment.min.js"></script>
 
@@ -25,7 +25,14 @@
   <div id="app" style="padding:10px;" v-bind:style="{color: mainColor}">
     <div v-if="online">
       <div v-for="(line, id) in lines">
-        <span v-if="hidden.indexOf(line.from) < 0" style="line-height:20px;"><span v-if="line.time" v-bind:style="{color: timeColor}">{{line.time}}</span> <span v-if="line.from" v-bind:style="{color: fromColor}">@{{line.from}}:</span> <span v-bind:style="{color: line.color || mainColor}">{{line.text}}</span>
+        <span v-if="hidden.indexOf(line.from) < 0" style="line-height:20px;">
+          <span v-if="line.time" v-bind:style="{color: timeColor}">{{line.time}}</span>
+          <span v-if="line.from" v-bind:style="{color: fromColor}">@{{line.from}}:</span>
+          <span v-bind:style="{color: line.color || mainColor}">{{line.text}}</span>
+          <div v-if="line.image">
+            <br>
+            <img style="width:500px;" v-bind:src="line.image">
+          </div>
       </div>
       <form v-on:submit="enterCommand">
         <span style="line-height:20px;">{{prompt}} <input type="text" v-model="command" id="prompt" autofocus autocomplete="off"></span><br>
@@ -79,16 +86,24 @@
 
         var tags = " ";
         for (var i=0; i<message.tags.length; i++) {
-          tags += "#" + message.tags[i] + " ";
+          if (message.tags[i].length > 0)
+            tags += "#" + message.tags[i] + " ";
         }
 
         // display message if available, otherwise stringify the payload
         if ('message' in message.payload) {
-          app.lines.push({from: message.from, text: message.payload['message'] + tags, time: moment().format("H:mm:ss")})
+          app.lines.push({from: message.from, text: message.payload['message'] + tags, time: moment().format("H:mm:ss")});
+        } else if ('png' in message.payload) {
+          app.lines.push({from: message.from, image: "data:image/png;base64," + message.payload['png'], time: moment().format("H:mm:ss")});
+        } else if ('online' in message.payload) {
+          app.lines.push({text: message.payload['online'] + ' is online', time: moment().format("H:mm:ss"), color: "yellow"});
+        } else if ('offline' in message.payload) {
+          app.lines.push({text: message.payload['offline'] + ' is offline', time: moment().format("H:mm:ss"), color: "red"});
         } else {
-          app.lines.push({from: message.from, text: JSON.stringify(message), time: moment().format("H:mm:ss")})
+          app.lines.push({from: message.from, text: JSON.stringify(message), time: moment().format("H:mm:ss")});
         }
-        app.scrollDown();
+
+        if ($.inArray(message.from, app.hidden) == -1) app.scrollDown();
       }
     }
 
@@ -264,6 +279,8 @@
 
             case "q":
             case "quit":
+            case "logout":
+            case "exit":
               location.reload();
             // empty
             case "":
